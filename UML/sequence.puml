@@ -1,0 +1,57 @@
+@startuml SequenceDiagram
+actor "SimulationEngine" as Engine
+participant "Transaction" as Tx
+participant "Government\n(Gov)" as Gov
+participant "Household\n(HH)" as HH
+participant "Firm\n(C target)" as FirmC
+participant "Firm\n(G target)" as FirmG
+
+== 初期化 (Initialization) ==
+Engine -> Tx: transfer(Gov, HH, 初期配布額)
+activate Tx
+Tx -> Gov: B/S更新 (負債増/純資産減)
+Tx -> HH: B/S更新 (資産増)
+deactivate Tx
+
+== 日次ループ (Daily Cycle: Step 1~60) ==
+loop 毎日
+    Engine -> HH: consume()
+    activate HH
+    HH -> Tx: transfer(HH, FirmC, daily_expense_total)
+    activate Tx
+    Tx -> HH: B/S更新 (資産減)
+    Tx -> FirmC: B/S更新 (資産増/収益増)
+    deactivate Tx
+    deactivate HH
+end
+
+== 月次ループ (Monthly Cycle: Step 30, 60) ==
+opt 30ステップごと
+    ' 給与支払い
+    Engine -> FirmC: pay_salary()
+    activate FirmC
+    FirmC -> Tx: transfer(FirmC, HH, 給与総額 * ratio)
+    deactivate FirmC
+    
+    Engine -> FirmG: pay_salary()
+    activate FirmG
+    FirmG -> Tx: transfer(FirmG, HH, 給与総額 * ratio)
+    deactivate FirmG
+
+    ' 納税
+    Engine -> HH: pay_tax()
+    activate HH
+    HH -> Tx: transfer(HH, Gov, 指定税額)
+    deactivate HH
+
+    ' 政府支出
+    Engine -> Gov: pay_firm()
+    activate Gov
+    Gov -> Tx: transfer(Gov, FirmG, 指定事業対価)
+    deactivate Gov
+
+    ' 整合性チェック
+    Engine -> Engine: 全AgentのB/S総和が0か検証
+end
+
+@enduml

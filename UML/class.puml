@@ -1,0 +1,53 @@
+@startuml classDiagram
+skinparam classAttributeIconSize 0
+
+' --- ユーティリティクラス ---
+class Transaction {
+  + {static} transfer(payer: Agent, payee: Agent, amount: int): void
+}
+
+' --- ベースクラス ---
+abstract class Agent {
+  - balance_sheet: BalanceSheet
+  + get_balance(): int
+}
+
+class BalanceSheet {
+  - assets: int
+  - liabilities: int
+  - equity: int
+  + add_asset(amount: int): void
+  + add_liability(amount: int): void
+}
+
+' --- 派生エージェントクラス ---
+class Government extends Agent {
+  - tax_revenue: int
+  + pay_firm(firm: Firm, amount: int): void
+}
+
+class Bank extends Agent {
+  ' Ver1.0.0では機能を持たないがエンティティとして存在
+}
+
+class Household extends Agent {
+  - individual_ids: List<int>
+  - daily_expense_total: int
+  + pay_tax(gov: Government, amount: int): void
+  + consume(firm: Firm): void
+}
+
+class Firm extends Agent {
+  - employee_ids: List<int>
+  - salary_ratios: Map<int, float>
+  - product_price: int
+  - is_target_G: bool
+  - is_target_C: bool
+  + pay_salary(households: List<Household>): void
+}
+
+' --- 関係性 ---
+Agent "1" *-- "1" BalanceSheet : owns >
+Transaction ..> Agent : modifies B/S >
+
+@enduml
